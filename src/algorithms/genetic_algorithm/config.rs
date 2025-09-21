@@ -11,6 +11,8 @@ pub struct GeneticAlgorithmConfig {
     pub mutation_rate: f64,
     /// Number of pairs of parents to select per generation
     pub number_pairs_parents: usize,
+    /// Possible stop criterion
+    pub stop_threshold: Option<f64>,
 }
 
 impl Default for GeneticAlgorithmConfig {
@@ -20,6 +22,7 @@ impl Default for GeneticAlgorithmConfig {
             population_size: 100,
             mutation_rate: 0.1,
             number_pairs_parents: 2,
+            stop_threshold: None,
         }
     }
 }
@@ -30,6 +33,7 @@ impl GeneticAlgorithmConfig {
         population_size: usize,
         mutation_rate: f64,
         number_pairs_parents: usize,
+        stop_threshold: Option<f64>,
     ) -> Result<Self, AlgorithmError> {
         // Validate the data
         if !(0.0..=1.0).contains(&mutation_rate) {
@@ -47,6 +51,7 @@ impl GeneticAlgorithmConfig {
             population_size,
             mutation_rate,
             number_pairs_parents,
+            stop_threshold,
         })
     }
 }

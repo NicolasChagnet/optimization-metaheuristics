@@ -7,6 +7,7 @@ use rand::seq::SliceRandom;
 use rand::seq::index::sample;
 
 use crate::algorithms::{GeneticCompatible, SimulatedAnnealing};
+use crate::problems::ProblemSolution;
 use crate::problems::errors::ProblemError;
 
 /// Generic Knapsack problem struct
@@ -164,15 +165,18 @@ impl<'a> PartialOrd for KnapsackSolution<'a> {
     }
 }
 
-/// Implement the Simulated annealing methods for the knapsack problem
-impl<'a> SimulatedAnnealing for KnapsackSolution<'a> {
+///
+impl<'a> ProblemSolution for KnapsackSolution<'a> {
     fn objective(&self) -> f64 {
         if self.weight > self.problem.max_weight {
             return 0.0; // Worst possible objective
         }
         -self.value
     }
+}
 
+/// Implement the Simulated annealing methods for the knapsack problem
+impl<'a> SimulatedAnnealing for KnapsackSolution<'a> {
     fn new_solution(&self, rng: &mut impl Rng) -> Result<Self, ProblemError> {
         let mut new_items = self.items.clone();
         let random_index = rng.random_range(0..self.problem.number_items);

@@ -31,12 +31,12 @@ mod tests {
             };
             let sa = SimulatedAnnealingAlgorithm::new(config);
             let initial_solution = KnapsackSolution::new(vec![], &problem).unwrap();
-            let solution = sa.execute(initial_solution, &mut rng).unwrap();
+            let result = sa.execute(initial_solution, &mut rng).unwrap();
             assert!(
-                solution.value == problem.optimal_value.unwrap(),
+                result.solution.value == problem.optimal_value.unwrap(),
                 "Expected {}, found {}.",
                 problem.optimal_value.unwrap(),
-                solution.value
+                result.solution.value
             )
         }
     }

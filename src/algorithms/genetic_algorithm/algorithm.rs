@@ -1,14 +1,17 @@
-use std::fmt::Debug;
+use std::{
+    fmt::Debug,
+    time::{Duration, Instant},
+};
 
 use rand::Rng;
 
 use crate::{
     algorithms::{AlgorithmError, genetic_algorithm::config::GeneticAlgorithmConfig},
-    problems::ProblemError,
+    problems::{ProblemError, ProblemSolution},
 };
 
 /// Main trait for compatible solutions
-pub trait GeneticCompatible: Clone + Debug + PartialOrd {
+pub trait GeneticCompatible: Clone + Debug + PartialOrd + ProblemSolution {
     fn mutate(&mut self, mutation_rate: f64, rng: &mut impl Rng) -> Result<(), ProblemError>;
 
     fn generate_children_with(
@@ -69,6 +72,26 @@ impl<T: GeneticCompatible> Population<T> {
     }
 }
 
+/// Genetic algorithm result
+pub struct GeneticAlgorithmResult<T> {
+    /// Solution obtained from the genetic algorithm
+    pub solution: T,
+    /// Runtime of the algorithm
+    pub runtime: Duration,
+    /// Number of generations required to find the solution
+    pub number_generations: usize,
+}
+
+impl<T> GeneticAlgorithmResult<T> {
+    pub fn new(solution: T, initial_time: Instant, number_generations: usize) -> Self {
+        Self {
+            solution,
+            runtime: Instant::now() - initial_time,
+            number_generations,
+        }
+    }
+}
+
 /// Main genetic algorithm to solve optimization problems
 pub struct GeneticAlgorithm {
     pub config: GeneticAlgorithmConfig,
@@ -83,10 +106,13 @@ impl GeneticAlgorithm {
         &self,
         initial_elements: Vec<T>,
         rng: &mut impl Rng,
-    ) -> Result<T, AlgorithmError>
+    ) -> Result<GeneticAlgorithmResult<T>, AlgorithmError>
     where
         T: GeneticCompatible,
     {
+        let initial_time = Instant::now();
+        let mut generation: usize = 0;
+
         // Create the initial population
         let capacity = self.config.population_size + 2 * self.config.number_pairs_parents;
         let mut population: Population<T> = Population::new(capacity);
@@ -94,7 +120,7 @@ impl GeneticAlgorithm {
         population.sort();
 
         // Iterate over generations
-        for _ in 1..=self.config.number_generations {
+        while generation < self.config.number_generations {
             // Generate offsprings
             let mut offsprings =
                 population.generate_offspring(self.config.number_pairs_parents, rng)?;
@@ -108,7 +134,19 @@ impl GeneticAlgorithm {
             population.add_individuals(offsprings);
             population.sort();
             population.truncate(self.config.population_size);
+
+            // Update the generation parameter
+            generation += 1;
+
+            // Early stopping check
+            if self.config.stop_threshold.is_some()
+                && (population.best_individual()?.objective() < self.config.stop_threshold.unwrap())
+            {
+                break;
+            }
         }
-        population.best_individual()
+        let result =
+            GeneticAlgorithmResult::new(population.best_individual()?, initial_time, generation);
+        Ok(result)
     }
 }
